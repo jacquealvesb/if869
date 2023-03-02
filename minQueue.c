@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-// -------------- DynamicArray -------------- //
-
 struct DynamicArray {
     uint32_t *values;
     int start, size, cap;
@@ -47,6 +45,11 @@ int fixedIndex(int i, struct DynamicArray *a) {
     }
 }
 
+uint32_t valueAt(int i, struct DynamicArray *a) {
+    int index = fixedIndex(i, a);
+    return a->values[index];
+}
+
 void insert(int val, struct DynamicArray *a) {
     if((float)(a->size)/(float)(a->cap) >= 0.5) {
         updateCapacity(a, a->cap * 2);
@@ -62,8 +65,7 @@ uint32_t deleteLast(struct DynamicArray *a) {
         updateCapacity(a, a->cap / 2);
     }
 
-    int index = fixedIndex(a->size - 1, a);
-    uint32_t val = a->values[index];
+    uint32_t val = valueAt(a->size - 1, a);
     a->size = a->size - 1;
     return val;
 }
@@ -73,7 +75,7 @@ uint32_t deleteFirst(struct DynamicArray *a) {
         updateCapacity(a, a->cap / 2);
     }
 
-    uint32_t val = a->values[a->start];
+    uint32_t val = valueAt(0, a);
     a->size = a->size - 1;
     a->start = (a->start + 1);
     if(a->start >= a->cap) {
@@ -82,8 +84,6 @@ uint32_t deleteFirst(struct DynamicArray *a) {
 
     return val;
 }
-
-// -------------- Queue -------------- //
 
 struct Queue {
     struct DynamicArray *V;
@@ -98,20 +98,17 @@ struct Queue *newQueue() {
 }
 
 uint32_t min(struct Queue *q) {
-    int firstIndex = q->I->values[q->I->start];
-    int index = fixedIndex(firstIndex, q->V);
-    return q->V->values[index];
+    int firstIndex = valueAt(0, q->I);
+    return valueAt(firstIndex, q->V);
 }
 
 void enqueue(int val, struct Queue *q) {
     insert(val, q->V);
     
-    int lastIndex = q->I->values[q->I->size - 1];
-    int index = fixedIndex(lastIndex, q->V);
-    while(q->I->size > 0 && q->V->values[index] > val) {
+    int lastIndex = valueAt(q->I->size - 1, q->I);
+    while(q->I->size > 0 && valueAt(lastIndex, q->V) > val) {
         deleteLast(q->I);
-        lastIndex = q->I->values[q->I->size - 1];
-        index = fixedIndex(lastIndex, q->V);
+        lastIndex = valueAt(q->I->size - 1, q->I);
     }
     
     insert(q->V->size - 1, q->I);
@@ -124,16 +121,13 @@ uint32_t dequeue(struct Queue *q) {
         q->I->values[i] = q->I->values[i] - 1;
     }
 
-    int firstIndex = q->I->values[q->I->start];
-    int index = fixedIndex(firstIndex, q->V);
-    if(q->V->values[index] == val) {
+    int firstIndex = valueAt(0, q->I);
+    if(valueAt(firstIndex, q->V) == val) {
         deleteFirst(q->I);
     } 
     
     return val;
 }
-
-// -------------- Program -------------- //
 
 uint32_t generateNumber(uint32_t seed) {
     uint32_t A = 1664525;
@@ -163,7 +157,7 @@ int main() {
             dequeue(queue);
         }
         
-        printf("%d %d\n", queue->I->size, queue->I->values[queue->I->start]);
+        printf("%d %d\n", queue->I->size, valueAt(0, queue->I));
         s = generateNumber(s);
     }
 
