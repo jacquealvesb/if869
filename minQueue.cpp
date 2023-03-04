@@ -1,13 +1,13 @@
 #include <iostream>
 #include <math.h>
-#include <vector>
+#include <deque>
 
 using namespace std;
 
 class Queue {       
   public:             
-    vector<uint32_t> V;      
-    vector<uint32_t> I;
+    deque<uint32_t> V;      
+    deque<uint32_t> I;
     
     uint32_t min() {
         return V.at(I.front());
@@ -27,13 +27,13 @@ class Queue {
         uint32_t currentMin = min();
         uint32_t dequeued = V.front();
         
-        V.erase(V.begin());
+        V.pop_front();
         for (auto & val : I) {
             val = val - 1;
         }
         
         if(currentMin == dequeued) {
-            I.erase(I.begin());
+            I.pop_front();
         }
     }
 };
