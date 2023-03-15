@@ -3,6 +3,7 @@
 #include <string>
 #include <math.h>
 #include <vector>
+#include <limits>
 
 using namespace std;
 
@@ -32,18 +33,26 @@ class RNG {
 
 class SparseTable {
     public:
-        int n;
-        uint32_t (*f)(uint32_t, uint32_t);
-        RNG *rng;
         vector<vector<uint32_t>> table;
+        RNG *rng;
+        int n;
+        uint32_t c0;
+        uint32_t (*f)(uint32_t, uint32_t);
         
         SparseTable(int n, string f, RNG *rng) {
             this->n = n;
             this->rng = rng;
             
-            if(f == "MIN") { this->f = min; }
-            else if(f == "MAX") { this->f = max; }
-            else if(f == "SUM"){ this->f = sum; }
+            if(f == "MIN") { 
+                this->f = min; 
+                this->c0 = std::numeric_limits<uint32_t>::max();
+            } else if(f == "MAX") { 
+                this->f = max; 
+                this->c0 = std::numeric_limits<uint32_t>::min();; 
+            } else if(f == "SUM") { 
+                this->f = sum; 
+                this->c0 = 0; 
+            }
             
             generate();
         }
@@ -51,17 +60,26 @@ class SparseTable {
         void generate() {
             generateFirstRow();
             
-            int m = floor(log(n)) + 1;
+            uint32_t x, y;
+            int m = floor(log2(n)) + 1;
             int k = 1;
+            
             for(int i = 1; i < m; i++) {
                 vector<uint32_t> row;
+
                 for(int j = 0; j < n; j++) {
-                    uint32_t x = table[i - 1][j];
-                    uint32_t y = table[i - 1][j + k];
-                    row.push_back(f(x, y));
+                    x = table[i - 1][j];
+       
+                    if(j + k < table[i - 1].size()) {
+                        y = table[i - 1][j + k];
+                        row.push_back(f(x, y));
+                        
+                    } else {
+                        row.push_back(x);
+                    }
                 }
                 table.push_back(row);
-                k = 2*k;
+                k *= 2;
             }
         }
         
@@ -72,7 +90,45 @@ class SparseTable {
             for(int i = 0; i < n; i++) {
                 row.push_back(rng->next() % m);
             }
+            
             table.push_back(row);
+        }
+        
+        void update(int j, uint32_t v) {
+            uint32_t x, y;
+            int m = floor(log2(n)) + 1;
+            int k = 1;
+            
+            table[0][j] = v;
+            
+            for(int i = 1; i < m; i++) {
+                for(int l = j - 2*k + 1; l <= j; l++) {
+                    
+                    x = table[i - 1][l];
+                    
+                    if(l + k < table[i - 1].size()) {
+                        y = table[i - 1][l + k];
+                        table[i][l] = f(x, y);
+                        
+                    } else {
+                        table[i][l] = x;
+                    }
+                }
+                k *= 2;
+            }
+        }
+        
+        uint32_t rangeQuery(int l, int r) {
+            uint32_t ans = c0;
+            int i;
+            
+            while(l < r) {
+                i = log2(r - l);
+                ans = f(ans, table[i][l]);
+                l += pow(2, i);
+            }
+            
+            return ans;
         }
 };
 
@@ -82,23 +138,37 @@ int main() {
 
     uint32_t s;
     int n, o, q, u;
+    int c = 0;
     string f;
     
     while(getline(cin, input)) {
         istringstream stream(input);
         stream >> s >> n >> f >> o >> q >> u;
         
+        int m = 4*n;
         RNG rng = RNG(s);
-        SparseTable st = SparseTable(n, f, &rng);
+        SparseTable t = SparseTable(n, f, &rng);
         
-        for(int i = 0; i < st.table.size(); i++) {
-            for(int j = 0; j < st.table[i].size(); j++) {
-                cout << st.table[i].at(j) << " - ";
+        cout << "caso " << c << endl;
+        for (int iOP = 0; iOP < o; iOP++) {
+            uint32_t x = rng.next();
+            
+            string op = (x % (q + u)) < q ? "QRY" : "UPD";
+            if(op == "QRY") {
+                int l = rng.next() % n;
+                int r = l + 1 + (rng.next() % (n - l));;
+                
+                cout << t.rangeQuery(l, r) << endl;
+            } else {
+                int i = rng.next() % n;
+                uint32_t v = rng.next() % m;
+                
+                t.update(i, v);
+                cout << t.rangeQuery(i, n) << endl;
             }
-            cout << endl;
         }
-
         cout << endl;
+        c++;
     }
     
   return 0;
