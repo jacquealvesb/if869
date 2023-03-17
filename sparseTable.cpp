@@ -67,16 +67,16 @@ class SparseTable {
             for(int i = 1; i < m; i++) {
                 vector<uint32_t> row;
 
-                for(int j = 0; j < n; j++) {
-                    x = table[i - 1][j];
-       
+                for(int j = 0; j < n; j++) {     
+
                     if(j + k < table[i - 1].size()) {
                         y = table[i - 1][j + k];
-                        row.push_back(f(x, y));
-                        
                     } else {
-                        row.push_back(x);
+                        y = table[i - 1].back();
                     }
+                    
+                    x = table[i - 1][j];
+                    row.push_back(f(x, y));
                 }
                 table.push_back(row);
                 k *= 2;
@@ -104,15 +104,14 @@ class SparseTable {
             for(int i = 1; i < m; i++) {
                 for(int l = j - 2*k + 1; l <= j; l++) {
                     
-                    x = table[i - 1][l];
-                    
                     if(l + k < table[i - 1].size()) {
                         y = table[i - 1][l + k];
-                        table[i][l] = f(x, y);
-                        
                     } else {
-                        table[i][l] = x;
+                        y = table[i - 1].back();
                     }
+                    
+                    x = table[i - 1][l];
+                    table[i][l] = f(x, y);
                 }
                 k *= 2;
             }
@@ -171,5 +170,5 @@ int main() {
         c++;
     }
     
-  return 0;
+    return 0;
 }
