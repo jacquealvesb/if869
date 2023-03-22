@@ -68,14 +68,10 @@ class SparseTable {
                 vector<uint32_t> row;
 
                 for(int j = 0; j < n; j++) {     
-
-                    if(j + k < table[i - 1].size()) {
-                        y = table[i - 1][j + k];
-                    } else {
-                        y = table[i - 1].back();
-                    }
-                    
+                    int index = min(j + k, table[i - 1].size() - 1);
+                    y = table[i - 1][index];
                     x = table[i - 1][j];
+                    
                     row.push_back(f(x, y));
                 }
                 table.push_back(row);
@@ -102,15 +98,11 @@ class SparseTable {
             table[0][j] = v;
             
             for(int i = 1; i < m; i++) {
-                for(int l = j - 2*k + 1; l <= j; l++) {
-                    
-                    if(l + k < table[i - 1].size()) {
-                        y = table[i - 1][l + k];
-                    } else {
-                        y = table[i - 1].back();
-                    }
-                    
+                for(int l = max(j - 2*k + 1, 0); l <= j; l++) {
+                    int index = min(l + k, table[i - 1].size() - 1);
+                    y = table[i - 1][index];
                     x = table[i - 1][l];
+                    
                     table[i][l] = f(x, y);
                 }
                 k *= 2;
@@ -132,7 +124,7 @@ class SparseTable {
 };
 
 int main() {
-    
+    cin.tie(0);ios_base::sync_with_stdio(0);
     string input;
 
     uint32_t s;
@@ -148,7 +140,7 @@ int main() {
         RNG rng = RNG(s);
         SparseTable t = SparseTable(n, f, &rng);
         
-        cout << "caso " << c << endl;
+        cout << "caso " << c << "\n";
         for (int iOP = 0; iOP < o; iOP++) {
             uint32_t x = rng.next();
             
@@ -157,16 +149,16 @@ int main() {
                 int l = rng.next() % n;
                 int r = l + 1 + (rng.next() % (n - l));;
                 
-                cout << t.rangeQuery(l, r) << endl;
+                cout << t.rangeQuery(l, r) << "\n";
             } else {
                 int i = rng.next() % n;
                 uint32_t v = rng.next() % m;
                 
                 t.update(i, v);
-                cout << t.rangeQuery(i, n) << endl;
+                cout << t.rangeQuery(i, n) << "\n";
             }
         }
-        cout << endl;
+        cout << "\n";
         c++;
     }
     
