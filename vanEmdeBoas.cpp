@@ -5,8 +5,8 @@
 
 using namespace std;
 
-uint32_t minimum(int x, int y) { return x < y ? x : y; }
-uint32_t maximum(int x, int y) { return x > y ? x : y; }
+int32_t minimum(int32_t x, int32_t y) { return x < y ? x : y; }
+int32_t maximum(int32_t x, int32_t y) { return x > y ? x : y; }
 
 class RNG {
     public:
@@ -30,19 +30,18 @@ class RNG {
 
 class vEBT {
     public:
-        int u, min, max;
+        int32_t u, min, max;
         vEBT *summary;
         vector<vEBT> clusters;
         
-        vEBT(int u) {
-            int m = sqrt(u);
+        vEBT(int32_t u) {
+            int32_t m = sqrt(u);
             
             this->u = u;
             this->min = u;
             this->max = -1;
             
             if(u > 2) {
-                
                 this->summary = new vEBT(m);
                 
                 for(int i = 0; i < m; i++) {
@@ -52,63 +51,82 @@ class vEBT {
             }
         }
         
-        int insert(int x) {
+        bool member(int32_t x) {
+            if(x == min || x == max) {
+                return true;
+            } else if(u == 2) {
+                return false;
+            } else {
+                int32_t h = high(x);
+                int32_t l = low(x);
+                return clusters[h].member(l);
+            }
+        }
+
+        int32_t successor(int32_t x) {
+            if(u == 2) {
+                if(x == 0 && max == 1) { return 1; }
+                else { return u; }
+            } else if(min != u && x < min) {
+                return min;
+            }
+
+            int32_t h = high(x);
+            int32_t l = low(x);
+            int32_t s;
+
+            if(l < clusters[h].max) {
+                s = clusters[h].successor(l);
+                return index(h, s);
+            
+            } else {
+                h = summary->successor(h);
+                if(h == summary->u) {
+                    return u;
+                } else {
+                    s = clusters[h].min;
+                    return index(h, s);
+                }
+            }
+        }
+        
+        int insert(int32_t x) {
+            if (member(x)) { return 0; }
+            
             if(u == 2) {
                 min = minimum(min, x);
                 max = maximum(max, x);
                 return 1;
             }
+
             if(min == u) {
                 min = x;
                 max = x;
                 return 1;
             }
+
             if(x < min) {
-                int oldMin = min;
+                int32_t old = min;
                 min = x;
-                x = oldMin;
+                x = old;
             }
-            max = maximum(max, x);
-            int h = high(x);
-            int l = low(x);
             
+            max = maximum(max, x);
+            int32_t h = high(x);
+            int32_t l = low(x);
+
             if(clusters[h].min == clusters[h].u) {
                 summary->insert(h);
             }
+
             return 1 + clusters[h].insert(l);
         }
-        
-        int successor(int x) {
+
+        int del(int32_t x) {
+            if(!member(x)) { return 0; }
+
             if(u == 2) {
-                if(x == 0 && max == 1) { return 1; }
-                else { return -1; }
-            
-            } else if(min != -1 && x < min) {
-                return min;
-            } else {
-                int h = high(x);
-                int l = low(x);
-                int m = clusters[h].max;
-                int offset, s;
-                
-                if(m != -1 && l < m) {
-                    offset = clusters[h].successor(l);
-                    return index(h, offset);
-                } else {
-                    s = summary->successor(h);
-                    if(s == -1) {
-                        return -1;
-                    } else {
-                        offset = clusters[s].min;
-                        return index(s, offset);
-                    }
-                }
-            }
-        }
-        
-        int del(int x) {
-            if(u == 2) {
-                if(x == min) {
+                if(x == min) { 
                     min = max != min ? max : u;
                 }
                 if(x == max) {
@@ -116,11 +134,10 @@ class vEBT {
                 }
                 return 1;
             }
-            
-            int i;
+
+            int32_t i;
             if(x == min) {
                 i = summary->min;
-                
                 if(i == summary->u) {
                     min = u;
                     max = -1;
@@ -131,41 +148,39 @@ class vEBT {
                 }
             }
             
-            int h = high(x);
-            int l = low(x);
-            
+            int32_t h = high(x);
+            int32_t l = low(x);
             int level = 1 + clusters[h].del(l);
+
             if(clusters[h].min == clusters[h].u) {
                 summary->del(h);
             }
+
             if(x == max) {
                 i = summary->max;
-                if(i == summary->u) {
+                if(i == -1) {
                     max = min;
                 } else {
                     max = index(i, clusters[i].max);
                 }
             }
-            
             return level;
         }
         
-        int high(int x) {
+        int32_t high(int32_t x) {
             return floor(x/sqrt(u));
         }
         
-        int low(int x) {
-            return x % (int)sqrt(u);
+        int32_t low(int32_t x) {
+            return x % (int32_t)sqrt(u);
         }
         
-        int index(int h, int l) {
-            return h * (int)sqrt(u) + l;
+        int32_t index(int32_t h, int32_t l) {
+            return h * (int32_t)sqrt(u) + l;
         }
 };
 
 int main() {
-    
-    string input;
 
     uint32_t s, x, y;
     int m, b, n, i, f, d, p;
@@ -174,9 +189,9 @@ int main() {
     cin >> s >> m >> b >> n >> i >> f >> d >> p;
     
     RNG rng = RNG(s);
-    int u = pow(2, 2*m);
+    int32_t u = pow(2, pow(2, m));
     vEBT t = vEBT(u);
-    
+
     for(int j = 0; j < b; j++) {
         t.insert(rng.next() % u);
     }
@@ -191,16 +206,16 @@ int main() {
         
         if(op == "INS") {
             x = rng.next() % u;
-            cout << "I " << t.insert(x) << endl;
+            cout << "I " << t.insert(x) << "\n";
         } else if(op == "SUC") {
             x = rng.next() % u;
-            cout << "S " << t.successor(x) << endl;
+            cout << "S " << t.successor(x) << "\n";
         } else {
             y = rng.next() % u;
             x = t.successor(y);
             
             if(x == t.u) { x = y; }
-            cout << "D " << t.del(x) << endl;
+            cout << "D " << t.del(x) << "\n";
         }
     }
     
