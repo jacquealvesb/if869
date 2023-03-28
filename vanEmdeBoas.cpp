@@ -50,20 +50,9 @@ class vEBT {
                 }
             }
         }
-        
-        bool member(int32_t x) {
-            if(x == min || x == max) {
-                return true;
-            } else if(u == 2) {
-                return false;
-            } else {
-                int32_t h = high(x);
-                int32_t l = low(x);
-                return clusters[h].member(l);
-            }
-        }
 
         int32_t successor(int32_t x) {
+            
             if(u == 2) {
                 if(x == 0 && max == 1) { return 1; }
                 else { return u; }
@@ -91,7 +80,7 @@ class vEBT {
         }
         
         int insert(int32_t x) {
-            if (member(x)) { return 0; }
+            if(x == min || x == max) { return 0; }
             
             if(u == 2) {
                 min = minimum(min, x);
@@ -118,21 +107,25 @@ class vEBT {
             if(clusters[h].min == clusters[h].u) {
                 summary->insert(h);
             }
-
-            return 1 + clusters[h].insert(l);
+            
+            int level = clusters[h].insert(l);
+            return (level == 0) ? 0 : 1 + level;
         }
 
         int del(int32_t x) {
-            if(!member(x)) { return 0; }
-
+            
             if(u == 2) {
+                int exists = 0;
+                
                 if(x == min) { 
+                    exists = 1;
                     min = max != min ? max : u;
                 }
                 if(x == max) {
+                    exists = 1;
                     max = min != u ? min : -1;
                 }
-                return 1;
+                return exists;
             }
 
             int32_t i;
@@ -150,7 +143,9 @@ class vEBT {
             
             int32_t h = high(x);
             int32_t l = low(x);
-            int level = 1 + clusters[h].del(l);
+            
+            int level = clusters[h].del(l);
+            if(level == 0) { return 0; }
 
             if(clusters[h].min == clusters[h].u) {
                 summary->del(h);
@@ -164,7 +159,8 @@ class vEBT {
                     max = index(i, clusters[i].max);
                 }
             }
-            return level;
+            
+            return 1 + level;
         }
         
         int32_t high(int32_t x) {
@@ -176,7 +172,7 @@ class vEBT {
         }
         
         int32_t index(int32_t h, int32_t l) {
-            return h * (int32_t)sqrt(u) + l;
+            return h * sqrt(u) + l;
         }
 };
 
@@ -201,21 +197,36 @@ int main() {
         x = rng.next() % (i + f + d);
 
         if(x < i) { op = "INS"; }
-        else if(x >= i && x < (i + f)) { op = "SUC"; }
+        else if(i <= x && x < (i + f)) { op = "SUC"; }
         else { op = "DEL"; }
         
         if(op == "INS") {
             x = rng.next() % u;
-            cout << "I " << t.insert(x) << "\n";
+
+            if(j % p == 0) {
+                cout << "I " << t.insert(x) << "\n";
+            } else {
+                t.insert(x);
+            }
         } else if(op == "SUC") {
             x = rng.next() % u;
-            cout << "S " << t.successor(x) << "\n";
+
+            if(j % p == 0) {
+                cout << "S " << t.successor(x) << "\n";
+            } else {
+                t.successor(x);
+            }
         } else {
             y = rng.next() % u;
             x = t.successor(y);
             
             if(x == t.u) { x = y; }
-            cout << "D " << t.del(x) << "\n";
+            
+            if(j % p == 0) {
+                cout << "D " << t.del(x) << "\n";
+            } else {
+                t.del(x);
+            }
         }
     }
     
