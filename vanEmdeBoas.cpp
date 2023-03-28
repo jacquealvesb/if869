@@ -30,12 +30,12 @@ class RNG {
 
 class vEBT {
     public:
-        int32_t u, min, max;
+        int32_t u, m, min, max;
         vEBT *summary;
         vector<vEBT> clusters;
         
         vEBT(int32_t u) {
-            int32_t m = sqrt(u);
+            m = sqrt(u);
             
             this->u = u;
             this->min = u;
@@ -164,15 +164,15 @@ class vEBT {
         }
         
         int32_t high(int32_t x) {
-            return floor(x/sqrt(u));
+            return floor(x/m);
         }
         
         int32_t low(int32_t x) {
-            return x % (int32_t)sqrt(u);
+            return x % m;
         }
         
         int32_t index(int32_t h, int32_t l) {
-            return h * sqrt(u) + l;
+            return h * m + l;
         }
 };
 
