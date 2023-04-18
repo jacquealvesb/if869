@@ -1,7 +1,7 @@
 #include <iostream>
-#include <string>
 #include <math.h>
-#include <vector>
+
+using namespace std;
 
 class RNG {
     public:
@@ -23,134 +23,189 @@ class RNG {
         }
 };
 
-class Node {
+struct Node {
     public:
-        Node *left, *right, *par = NULL;
-        uint32_t key = 0;
+        uint32_t key;
+        Node *par, *left, *right;
+
+        Node(uint32_t k) {
+            key = k;
+            par = left = right = NULL;
+        }
 };
 
 class SplayTree {
     public:
-        Node *head;
+        Node* root;
 
-    void insert(uint32_t key) {
-        Node *newNode = Node(key);
-        Node *temp = head;
-        Node *p;
+        void rotateLeft(Node* x) {
+            Node* r = x->right;
 
-        while(temp != NULL) {
-            p = temp;
-            if(key < temp->key) {
-                temp = temp->left;
+            x->right = r->left;
+            if (r->left != NULL) {
+                r->left->par = x;
+            }
+
+            r->par = x->par;
+            if (x->par == NULL) {
+                root = r;
+            } else if (x == x->par->left) {
+                x->par->left = r;
             } else {
-                temp = temp->right;
+                x->par->right = r;
+            }
+
+            r->left = x;
+            x->par = r;
+        }
+
+        void rotateRight(Node* x) {
+            Node* l = x->left;
+
+            x->left = l->right;
+            if (l->right != NULL) {
+                l->right->par = x;
+            }
+
+            l->par = x->par;
+            if (x->par == NULL) {
+                root = l;
+            } else if (x == x->par->left) {
+                x->par->left = l;
+            } else {
+                x->par->right = l;
+            }
+
+            l->right = x;
+            x->par = l;
+        }
+
+        void zig(Node *x) {
+            Node *p = x->par;
+            if(x == p->left) {
+                rotateRight(p);
+            } else {
+                rotateLeft(p);
             }
         }
-        newNode->par = p;
-        if(p == NULL) {
-            head = newNode;
-        } else if(newNode->key < p->key) {
-            y->left = newNode;
-        } else {
-            y->right = newNode;
+
+        void zigzag(Node *x) {
+            Node *p = x->par;
+            Node *g = p->par;
+
+            if(p == g->left) {
+                if(x == p->left) {
+                    rotateRight(g);
+                    rotateRight(p);
+                } else {
+                    rotateLeft(p);
+                    rotateRight(g);
+                }
+            } else {
+                if(x == p->right) {
+                    rotateLeft(g);
+                    rotateLeft(p);
+                } else {
+                    rotateRight(p);
+                    rotateLeft(g);
+                }
+            }
         }
-        splay(newNode);
-    }
+
+        Node* splay(Node* x) {
+            Node *g;
+            while (x->par != NULL) {
+                g = x->par->par;
+                if(g == NULL) {
+                    zig(x);
+                } else {
+                    zigzag(x);
+                }
+            }
+            return x;
+        }
+
+        int query(uint32_t key) {
+            Node* current = root;
+            int depth = 0;
+
+            while (current != NULL) {
+                if (key == current->key) {
+                    root = splay(current);
+                    return depth;
+                } else if (key < current->key) {
+                    current = current->left;
+                } else {
+                    current = current->right;
+                }
+                depth++;
+            }
+            return -1;
+        }
+
+        int insert(uint32_t key) {
+            Node* current = root;
+            Node* par = NULL;
+            int depth = 0;
+
+            while (current != NULL) {
+                par = current;
+                if (key < current->key) {
+                    current = current->left;
+                } else if (key > current->key) {
+                    current = current->right;
+                } else {
+                    return -1;
+                }
+                depth++;
+            }
+
+            Node* newNode = new Node(key);
+            newNode->par = par;
+            if (par == NULL) {
+                root = newNode;
+                return 0;
+            } else if (key < par->key) {
+                par->left = newNode;
+            } else         {
+                par->right = newNode;
+            }
+            return depth;
+        }
 };
 
-Node *rotateLeft(Node *x) {
-    Node *p = x->par;
-    Node *r = x->right;
-    Node *rl = r->left;
-
-    x->right = rl;
-    if(rl) {
-        rl->par = x;
-    }
-    r->left = x;
-    x->par = r;
-    r->par = p;
-    if(p && x == p->left) {
-        p->left = r;
-    } else if(p && x == p->right) {
-        p->right = r;
-    }
-    return r;
-}
-
-Node *rotateRight(Node *x) {
-    Node *p = x->par;
-    Node *l = x->left;
-    Node *lr = l->right;
-
-    x->left = lr;
-    if(lr) {
-        lr->par = x;
-    }
-    l->right = x;
-    x->par = r;
-    l->par = p;
-    if(p && x == p->right) {
-        p->right = l;
-    } else if(p && x == p->left) {
-        p->left = l;
-    }
-    return l;
-}
-
-Node *zig(Node *x) {
-    Node *p = x->par;
-    if(x == p->left) {
-        return rotateRight(p);
-    } else {
-        return rotateLeft(p);
-    }
-}
-
-Node *zigzag(Node *x) {
-    Node *p = x->par;
-    Node *g->par;
-
-    if(p == g->left) {
-        if(x == p->left) {
-            rotateRight(g);
-            return rotateRight(p);
-        } else {
-            rotateLeft(p);
-            return rotateRight(g);
-        }
-    } else {
-        if(x == p->right) {
-            rotateLeft(g);
-            return rotateLeft(p);
-        } else {
-            rotateRight(p);
-            return rotateLeft(g);
-        }
-    }
-}
-
-Node *splay(Node *x) {
-    while(x->par != NULL) {
-        Node *g = x->par->par;
-        if(g == NULL) {
-            zig(x);
-        } else {
-            zigzag(x);
-        }
-    }
-    return x;
-}
-
-int main() {
-
-    uint32_t s;
-    int u;
+int main()
+{
+    uint32_t s, x;
+    int u, b, n, i, q, p, d;
+    string op;
     
-    cin >> s >> u;
+    cin >> s >> u >> b >> n >> i >> q >> p;
     
     RNG rng = RNG(s);
-    SplayTree t = SplayTree(rng.next() % u);
+    SplayTree t = SplayTree();
+
+    for(int j = 0; j < b; j++) {
+        t.insert(rng.next() % u);
+    }
+    
+    for(int j = 0; j < n; j++) {
+        
+        x = rng.next();
+        
+        op = (x % (i + q) < i) ? "INS" : "QRY";
+        x = rng.next() % u;
+        
+        if(op == "INS") {
+            d = t.insert(x);
+        } else {
+            d = t.query(x);
+        }
+
+        if(j % p == 0) {
+            cout << op[0] << " " << x << " " << d << endl;
+        }
+    }
     
     return 0;
 }
